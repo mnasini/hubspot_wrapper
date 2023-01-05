@@ -1,0 +1,2 @@
+class hubWrapper(object):
+    pass
