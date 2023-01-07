@@ -6,7 +6,7 @@ class hubWrapper:
         self.token=session.params['token']
         pass
     def get_all_ids(self,export=False):     
-        query_params = {'limit': '10', 'archieved':'false','properties':'email'}
+        query_params = {'limit': '100', 'archieved':'false','properties':'email'}
         path= 'https://api.hubapi.com/crm/v3/objects/contacts'
         session.headers.update({"Authorization": "Bearer {}".format(self.token)})
         response = session.get(path,params=query_params)
@@ -23,16 +23,25 @@ class hubWrapper:
         return final
 
         
-    def get_customer(self,customer_id,params,export=False):
+    def get_customer(self,customer_id,params,history=False,export=False):
         query_params = {'archieved':'false','idProperty':'email','properties':params}
         if params == "all":
-           query_params = {'limit': '10', 'archieved':'false','idProperty':'email'} 
-        path= 'https://api.hubapi.com/crm/v3/objects/contacts/{}'.format(customer_id)
+           query_params = {'limit': '100', 'archieved':'false','idProperty':'email'}
+        if (history):
+        
+            query_params={'archieved':'false','idProperty':'email','properties':params,'propertiesWithHistory':params}
+            if(params=="all"):
+                query_params["propertiesWithHistory"]=["email","firstname","lastname"]
+        path='https://api.hubapi.com/crm/v3/objects/contacts/{}'.format(customer_id)
         session.headers.update({"Authorization": "Bearer {}".format(self.token)})
         response = session.get(path,params=query_params).json()
         for i in response["properties"]:
                 response[i]=response["properties"][i]
         response.pop("properties")
+        if (history):
+            for i in response["propertiesWithHistory"]:
+                response[i]=response["propertiesWithHistory"][i]
+            response.pop("propertiesWithHistory")
         if(export):
             
             keys = response.keys()
@@ -42,9 +51,15 @@ class hubWrapper:
                 dict_writer.writeheader()
                 dict_writer.writerow(response)
         return response
-    def get_customer_batch(self,customer_list_id,params,export=False):
+    def get_customer_batch(self,customer_list_id,params,history=False,export=False):
         result=list()
         query_params = {'archieved':'false','idProperty':'email','properties':params}
+        if params== "all":
+            query_params={'limit': '1000', 'archieved':'false','idProperty':'email'} 
+        if(history):
+            query_params={'archieved':'false','idProperty':'email','properties':params,'propertiesWithHistory':params}
+            if(params=="all"):
+                query_params["propertiesWithHistory"]=["email","firstname","lastname"]
         session.headers.update({"Authorization": "Bearer {}".format(self.token)})
         for i in customer_list_id:
             path= 'https://api.hubapi.com/crm/v3/objects/contacts/{}'.format(i)
@@ -52,6 +67,10 @@ class hubWrapper:
             for i in response["properties"]:
                 response[i]=response["properties"][i]
             response.pop("properties")
+            if (history):
+                for i in response["propertiesWithHistory"]:
+                    response[i]=response["propertiesWithHistory"][i]
+                response.pop("propertiesWithHistory")
                 
             result.append(response)
         if(export):
