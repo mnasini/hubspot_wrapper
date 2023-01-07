@@ -5,13 +5,22 @@ class hubWrapper:
     def __init__(self):
         self.token=session.params['token']
         pass
-    def get_all_ids(self):     #add params list (to be apended for custom getter)
+    def get_all_ids(self,export=False):     
         query_params = {'limit': '10', 'archieved':'false','properties':'email'}
         path= 'https://api.hubapi.com/crm/v3/objects/contacts'
         session.headers.update({"Authorization": "Bearer {}".format(self.token)})
         response = session.get(path,params=query_params)
         response_dict=response.json()["results"]
-        return list(map(lambda x: x["email"],list(map(lambda x: x["properties"],response_dict))))
+        final=list(map(lambda x: x["email"],list(map(lambda x: x["properties"],response_dict))))
+        if (export):
+            
+            with open('list_customer_emails_{}.csv'.format(datetime.datetime.now()), 'w', newline='') as output_file:
+                csv_writer = csv.writer(output_file)
+                csv_writer.writerow(["email"])
+                for i in final:
+                    csv_writer.writerow([i])
+
+        return final
 
         
     def get_customer(self,customer_id,params,export=False):
