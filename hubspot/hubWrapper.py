@@ -14,14 +14,25 @@ class hubWrapper:
         return list(map(lambda x: x["email"],list(map(lambda x: x["properties"],response_dict))))
 
         
-    def get_customer(self,customer_id,params):
+    def get_customer(self,customer_id,params,export=False):
         query_params = {'archieved':'false','idProperty':'email','properties':params}
         if params == "all":
            query_params = {'limit': '10', 'archieved':'false','idProperty':'email'} 
         path= 'https://api.hubapi.com/crm/v3/objects/contacts/{}'.format(customer_id)
         session.headers.update({"Authorization": "Bearer {}".format(self.token)})
-        response = session.get(path,params=query_params)
-        return response.json()
+        response = session.get(path,params=query_params).json()
+        for i in response["properties"]:
+                response[i]=response["properties"][i]
+        response.pop("properties")
+        if(export):
+            
+            keys = response.keys()
+
+            with open('export_single_customer_{}.csv'.format(datetime.datetime.now()), 'w', newline='') as output_file:
+                dict_writer = csv.DictWriter(output_file, keys)
+                dict_writer.writeheader()
+                dict_writer.writerow(response)
+        return response
     def get_customer_batch(self,customer_list_id,params,export=False):
         result=list()
         query_params = {'archieved':'false','idProperty':'email','properties':params}
